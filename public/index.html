@@ -3,160 +3,712 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Website Grader &amp; Score | Alma Digital</title>
-  <meta name="description" content="Get a free website score in seconds. Our grader analyzes your site's performance, mobile-friendliness, SEO, security, and conversion readiness on an A-F scale.">
-  <meta name="keywords" content="website grader, website score, website grade, free website grader, site grader, website analyzer">
+  <title>Free Website Grader & Score Checker | Alma Digital Services</title>
+  <meta name="description" content="Get a free website grade in 60 seconds. Check your site's performance, mobile, SEO, security, and conversion score. See exactly what's costing you leads.">
+  <meta name="keywords" content="website grader, website score, website grade, free website analysis, website checker, SEO checker">
   <link rel="canonical" href="https://score.almadigitalservices.com/">
-  <meta property="og:title" content="Free Website Score | Alma Digital">
-  <meta property="og:description" content="Grade your website in seconds. Get actionable insights on performance, SEO, mobile, security, and conversion readiness.">
+  <meta property="og:title" content="Free Website Grader | Alma Digital Services">
+  <meta property="og:description" content="Get your free website grade in 60 seconds. Performance, SEO, mobile, security & conversion score.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://score.almadigitalservices.com/">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Free Website Score | Alma Digital">
-  <meta name="twitter:description" content="Grade your website in seconds across 5 key dimensions.">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Alma Website Score",
+    "name": "Alma Website Grader",
+    "description": "Free website grader and score checker tool",
     "url": "https://score.almadigitalservices.com",
-    "description": "Free website grading tool that scores your site on performance, mobile, SEO, security, and conversion readiness.",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "creator": {
+    "provider": {
       "@type": "Organization",
       "name": "Alma Digital Services",
       "url": "https://almadigitalservices.com"
     }
   }
   </script>
-  <link rel="stylesheet" href="/style.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #1a1a2e;
+      --accent: #e94560;
+      --accent2: #0f3460;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --bg: #f9fafb;
+      --white: #ffffff;
+      --border: #e5e7eb;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--brand);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent); }
+    nav a.nav-cta {
+      background: var(--accent);
+      color: white;
+      padding: 8px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--accent2) 100%);
+      color: white;
+      text-align: center;
+      padding: 80px 24px 60px;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .hero h1 span { color: #ffd700; }
+    .hero p.subtitle {
+      font-size: 1.15rem;
+      color: rgba(255,255,255,0.85);
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+
+    /* FORM CARD */
+    .form-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .input-group input:focus { border-color: var(--accent); }
+    .btn-grade {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-grade:hover { background: #c73350; }
+    .btn-grade:active { transform: scale(0.98); }
+    .btn-grade:disabled { background: var(--muted); cursor: not-allowed; }
+    .privacy-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* LOADING */
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 40px 0;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-steps {
+      list-style: none;
+      text-align: left;
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .loading-steps li { padding: 4px 0; }
+    .loading-steps li.active { color: var(--accent); font-weight: 600; }
+    .loading-steps li.done { color: var(--success); }
+
+    /* RESULTS */
+    #results { display: none; }
+
+    .results-hero {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--accent2) 100%);
+      color: white;
+      text-align: center;
+      padding: 60px 24px 40px;
+    }
+    .grade-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      font-weight: 900;
+      margin: 0 auto 16px;
+      border: 6px solid rgba(255,255,255,0.3);
+    }
+    .grade-A { background: var(--success); }
+    .grade-B { background: #3b82f6; }
+    .grade-C { background: var(--warning); color: #1f2937; }
+    .grade-D { background: #f97316; }
+    .grade-F { background: var(--danger); animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(239,68,68,0); }
+    }
+
+    .results-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .dimensions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .dimension-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .dim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .dim-name {
+      font-weight: 700;
+      text-transform: capitalize;
+      font-size: 0.95rem;
+    }
+    .dim-score {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .score-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .score-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.8s ease;
+    }
+    .fill-good { background: var(--success); }
+    .fill-ok { background: #3b82f6; }
+    .fill-warn { background: var(--warning); }
+    .fill-bad { background: #f97316; }
+    .fill-crit { background: var(--danger); }
+
+    .dim-findings {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .dim-findings li {
+      padding: 3px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .dim-findings li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    /* HIGH PAIN CTA */
+    .high-pain-cta {
+      background: linear-gradient(135deg, #1a1a2e, #e94560);
+      color: white;
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .high-pain-cta h2 {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+    .high-pain-cta p {
+      margin-bottom: 24px;
+      opacity: 0.9;
+    }
+    .btn-cta-big {
+      background: #ffd700;
+      color: #1a1a2e;
+      padding: 16px 36px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    .btn-cta-big:hover { transform: scale(1.03); }
+
+    /* STANDARD CTA */
+    .standard-cta {
+      background: white;
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .standard-cta h3 { margin-bottom: 8px; }
+    .standard-cta p { color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; }
+    .btn-cta {
+      background: var(--accent);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* SOCIAL PROOF */
+    .social-proof {
+      background: var(--brand);
+      color: white;
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      flex-wrap: wrap;
+      max-width: 700px;
+      margin: 24px auto 0;
+    }
+    .stat-num { font-size: 2.5rem; font-weight: 800; color: #ffd700; }
+    .stat-label { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
+
+    /* HOW IT WORKS */
+    .how-it-works {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .how-it-works h2 { font-size: 1.8rem; margin-bottom: 40px; }
+    .steps { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+    .step { max-width: 200px; }
+    .step-icon {
+      width: 64px; height: 64px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      margin: 0 auto 12px;
+    }
+    .step h3 { margin-bottom: 8px; }
+    .step p { font-size: 0.9rem; color: var(--muted); }
+
+    /* FOOTER */
+    footer {
+      background: var(--brand);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 24px;
+      font-size: 0.85rem;
+    }
+    footer a { color: rgba(255,255,255,0.8); }
+
+    /* ERROR */
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .retry-btn {
+      background: none;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+      font-size: 1rem;
+    }
+    .retry-btn:hover { background: var(--accent); color: white; }
+
+    @media (max-width: 600px) {
+      .form-card { padding: 24px 20px; }
+      .high-pain-cta { padding: 28px 20px; }
+      .stats { gap: 30px; }
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <a href="/" class="logo">Alma <span>Website Score</span></a>
+
+<nav>
+  <a href="https://almadigitalservices.com" class="logo">Alma <span>Digital</span></a>
+  <a href="https://almadigitalservices.com/contact" class="nav-cta">Get a Free Redesign</a>
+</nav>
+
+<!-- LANDING PAGE -->
+<div id="landing">
+  <section class="hero">
+    <h1>What Grade Does Your<br><span>Website Score?</span></h1>
+    <p class="subtitle">Find out in 60 seconds. Get a free, instant A-F grade across 5 key dimensions — and see exactly what's costing you leads.</p>
+
+    <div class="form-card">
+      <div class="input-group">
+        <input type="url" id="urlInput" placeholder="Enter your website URL (e.g. yoursite.com)" autocomplete="off">
+        <input type="email" id="emailInput" placeholder="Your email (get a copy of your report)">
+        <button class="btn-grade" id="gradeBtn" onclick="startGrading()">
+          Grade My Website →
+        </button>
+      </div>
+      <p class="privacy-note">🔒 We never share your email. No spam, ever.</p>
+      <div class="error-msg" id="errorMsg"></div>
     </div>
-  </header>
+  </section>
 
-  <main>
-    <section id="hero" class="section-hero">
-      <div class="container">
-        <h1>How Does Your Website Score?</h1>
-        <p class="subtitle">Get a free, instant analysis of your website across 5 critical dimensions. Find out what's holding your site back — and how to fix it.</p>
-
-        <form id="score-form" class="score-form">
-          <div class="input-row">
-            <input type="text" id="url-input" name="url" placeholder="Enter your website URL (e.g. example.com)" required autocomplete="url">
-            <button type="submit" id="score-btn">Grade My Site</button>
-          </div>
-          <div class="email-row">
-            <input type="email" id="email-input" name="email" placeholder="Your email (optional — for detailed report)">
-          </div>
-        </form>
-
-        <p class="trust-line">Trusted by businesses to identify website issues. 100% free, no signup required.</p>
-      </div>
-    </section>
-
-    <section id="loading" class="section-loading hidden">
-      <div class="container">
-        <div class="loader-wrap">
-          <div class="spinner"></div>
-          <h2>Analyzing your website...</h2>
-          <p id="loading-status">Running performance checks...</p>
-          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="results" class="section-results hidden">
-      <div class="container">
-        <div class="results-header">
-          <div class="overall-grade" id="overall-grade">
-            <div class="grade-circle" id="grade-circle">
-              <span class="grade-letter" id="grade-letter">B</span>
-            </div>
-            <div class="grade-meta">
-              <h2>Your Website Score</h2>
-              <p class="score-url" id="score-url"></p>
-              <p class="score-number"><span id="score-number">0</span>/100</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="dimensions" id="dimensions"></div>
-
-        <div id="cta-section" class="cta-section">
-          <div id="cta-redesign" class="cta-card cta-redesign hidden">
-            <h3>Your website is holding your business back.</h3>
-            <p>Sites that score D or F lose up to 70% of potential customers. Let our team build you a modern, high-converting website — starting with a free redesign preview.</p>
-            <a href="https://almadigitalservices.com/#contact" class="btn btn-cta">Get a Free Redesign Preview</a>
-          </div>
-          <div id="cta-general" class="cta-card">
-            <h3>Want expert help improving your score?</h3>
-            <p>Our team specializes in building fast, SEO-optimized websites that convert visitors into customers.</p>
-            <a href="https://almadigitalservices.com/#contact" class="btn btn-secondary">Talk to Our Team</a>
-          </div>
-        </div>
-
-        <div class="rescan">
-          <button id="rescan-btn" class="btn btn-outline">Scan Another Website</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="error" class="section-error hidden">
-      <div class="container">
-        <div class="error-card">
-          <h2>Unable to Analyze</h2>
-          <p id="error-message">We couldn't reach that website. Please check the URL and try again.</p>
-          <button id="retry-btn" class="btn btn-outline">Try Again</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-how">
-      <div class="container">
-        <h2>What We Analyze</h2>
-        <div class="how-grid">
-          <div class="how-card">
-            <div class="how-icon">&#9889;</div>
-            <h3>Performance</h3>
-            <p>Page speed, load times, and Core Web Vitals that affect user experience and Google rankings.</p>
-          </div>
-          <div class="how-card">
-            <div class="how-icon">&#128241;</div>
-            <h3>Mobile</h3>
-            <p>Mobile responsiveness, touch targets, and how your site performs on phones and tablets.</p>
-          </div>
-          <div class="how-card">
-            <div class="how-icon">&#128270;</div>
-            <h3>SEO</h3>
-            <p>Meta tags, headings, structured data, and technical SEO signals that help you rank higher.</p>
-          </div>
-          <div class="how-card">
-            <div class="how-icon">&#128274;</div>
-            <h3>Security</h3>
-            <p>HTTPS, security headers, and protections that build trust with visitors and search engines.</p>
-          </div>
-          <div class="how-card">
-            <div class="how-icon">&#128176;</div>
-            <h3>Conversion</h3>
-            <p>CTAs, contact forms, trust signals, and elements that turn visitors into customers.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="container">
-      <p>&copy; 2026 <a href="https://almadigitalservices.com">Alma Digital Services</a>. Free website grader tool.</p>
+  <div id="loading">
+    <div style="max-width:400px;margin:0 auto;background:white;border-radius:var(--radius);padding:40px;box-shadow:0 4px 24px rgba(0,0,0,0.1)">
+      <div class="spinner"></div>
+      <p style="font-weight:700;margin-bottom:16px">Analyzing your website...</p>
+      <ul class="loading-steps" id="loadingSteps">
+        <li id="step1">⏳ Checking page speed...</li>
+        <li id="step2">⏳ Testing mobile experience...</li>
+        <li id="step3">⏳ Auditing SEO signals...</li>
+        <li id="step4">⏳ Scanning security headers...</li>
+        <li id="step5">⏳ Evaluating conversion elements...</li>
+      </ul>
     </div>
-  </footer>
+  </div>
 
-  <script src="/app.js"></script>
+  <section class="how-it-works">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon">🔗</div>
+        <h3>Enter Your URL</h3>
+        <p>Paste your website address — no account needed</p>
+      </div>
+      <div class="step">
+        <div class="step-icon">⚡</div>
+        <h3>We Analyze It</h3>
+        <p>Our tool checks 5 dimensions in ~60 seconds</p>
+      </div>
+      <div class="step">
+        <div class="step-icon">📊</div>
+        <h3>Get Your Grade</h3>
+        <p>See your A-F score with specific, actionable findings</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="social-proof">
+    <h2 style="color:white;font-size:1.6rem">Trusted by local businesses across the US</h2>
+    <div class="stats">
+      <div>
+        <div class="stat-num">5</div>
+        <div class="stat-label">Scoring dimensions</div>
+      </div>
+      <div>
+        <div class="stat-num">A–F</div>
+        <div class="stat-label">Clear letter grade</div>
+      </div>
+      <div>
+        <div class="stat-num">60s</div>
+        <div class="stat-label">Average scan time</div>
+      </div>
+      <div>
+        <div class="stat-num">Free</div>
+        <div class="stat-label">Always free</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- RESULTS PAGE -->
+<div id="results">
+  <section class="results-hero" id="resultsHero">
+    <div class="grade-circle" id="gradeCircle">?</div>
+    <h1 id="resultHeadline" style="font-size:1.6rem;margin-bottom:8px"></h1>
+    <p id="resultUrl" style="opacity:0.7;font-size:0.9rem"></p>
+    <p id="overallScore" style="font-size:1.1rem;margin-top:8px"></p>
+  </section>
+
+  <div class="results-content">
+    <div id="highPainCTA" class="high-pain-cta" style="display:none">
+      <h2>🚨 Your Website Is Actively Losing You Business</h2>
+      <p>With a grade this low, visitors are bouncing before they can contact you. We've helped dozens of businesses in your situation turn their website into a lead machine — and we'll show you exactly what yours would look like, completely free.</p>
+      <a href="https://almadigitalservices.com/contact?ref=websitescore&grade=lowpain" class="btn-cta-big">
+        Get Your Free Redesign Preview →
+      </a>
+      <p style="margin-top:16px;font-size:0.85rem;opacity:0.8">No commitment. We build it. You decide.</p>
+    </div>
+
+    <div class="dimensions-grid" id="dimensionsGrid"></div>
+
+    <div class="standard-cta" id="standardCTA">
+      <h3>Want to improve your score?</h3>
+      <p>Our team can audit your site in detail and show you exactly what a redesigned version would look like — for free.</p>
+      <a href="https://almadigitalservices.com/contact?ref=websitescore" class="btn-cta">Talk to Us About a Redesign</a>
+    </div>
+
+    <div style="text-align:center;margin-top:16px">
+      <button class="retry-btn" onclick="resetForm()">Grade Another Website</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 <a href="https://almadigitalservices.com">Alma Digital Services</a> · Free Website Grader Tool</p>
+  <p style="margin-top:6px">Questions? <a href="mailto:desk@almawebcreative.com">desk@almawebcreative.com</a></p>
+</footer>
+
+<script>
+function showSection(id) {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  if (id === 'landing') document.getElementById('landing').style.display = 'block';
+  else if (id === 'loading') document.getElementById('loading').style.display = 'block';
+  else if (id === 'results') document.getElementById('results').style.display = 'block';
+}
+
+function animateLoadingSteps() {
+  const steps = ['step1','step2','step3','step4','step5'];
+  const labels = [
+    '✅ Page speed checked',
+    '✅ Mobile experience tested',
+    '✅ SEO signals audited',
+    '✅ Security headers scanned',
+    '✅ Conversion elements evaluated'
+  ];
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      document.getElementById(id).textContent = labels[i];
+      document.getElementById(id).className = 'done';
+    }, i * 1200);
+  });
+}
+
+function getScoreColor(score) {
+  if (score >= 90) return '#10b981';
+  if (score >= 80) return '#3b82f6';
+  if (score >= 70) return '#f59e0b';
+  if (score >= 60) return '#f97316';
+  return '#ef4444';
+}
+
+function getFillClass(score) {
+  if (score >= 90) return 'fill-good';
+  if (score >= 80) return 'fill-ok';
+  if (score >= 70) return 'fill-warn';
+  if (score >= 60) return 'fill-bad';
+  return 'fill-crit';
+}
+
+function renderResults(data) {
+  const gradeCircle = document.getElementById('gradeCircle');
+  gradeCircle.textContent = data.letterGrade;
+  gradeCircle.className = 'grade-circle grade-' + data.letterGrade;
+
+  const headlines = {
+    A: '🎉 Outstanding! Your website is top-tier.',
+    B: '✅ Good work — a few tweaks could push you to A.',
+    C: '⚠️ Room to improve. These issues are costing you leads.',
+    D: '🔴 Your website needs attention — leads are slipping away.',
+    F: '🚨 Critical issues found. Your website is hurting your business.'
+  };
+  document.getElementById('resultHeadline').textContent = headlines[data.letterGrade];
+  document.getElementById('resultUrl').textContent = data.url || '';
+  document.getElementById('overallScore').textContent = `Overall Score: ${data.overallScore}/100`;
+
+  // High pain CTA
+  if (data.isHighPain) {
+    document.getElementById('highPainCTA').style.display = 'block';
+    document.getElementById('standardCTA').style.display = 'none';
+    // Update standard CTA link with grade param
+    document.querySelector('.standard-cta a').href =
+      'https://almadigitalservices.com/contact?ref=websitescore&grade=' + data.letterGrade;
+  }
+
+  // Dimension cards
+  const grid = document.getElementById('dimensionsGrid');
+  grid.innerHTML = '';
+  const dimLabels = {
+    performance: '⚡ Performance',
+    mobile: '📱 Mobile',
+    seo: '🔍 SEO',
+    security: '🔒 Security',
+    conversion: '💰 Conversion'
+  };
+  for (const [key, dim] of Object.entries(data.dimensions)) {
+    const card = document.createElement('div');
+    card.className = 'dimension-card';
+    const color = getScoreColor(dim.score);
+    const fillClass = getFillClass(dim.score);
+    const findings = (dim.findings || []).slice(0, 3).map(f =>
+      `<li>${f}</li>`
+    ).join('');
+    card.innerHTML = `
+      <div class="dim-header">
+        <span class="dim-name">${dimLabels[key] || key}</span>
+        <span class="dim-score" style="color:${color}">${dim.score}</span>
+      </div>
+      <div class="score-bar"><div class="score-fill ${fillClass}" style="width:${dim.score}%"></div></div>
+      <ul class="dim-findings">${findings}</ul>
+    `;
+    grid.appendChild(card);
+  }
+
+  showSection('results');
+  window.scrollTo(0, 0);
+}
+
+async function startGrading() {
+  const url = document.getElementById('urlInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  const errEl = document.getElementById('errorMsg');
+  errEl.style.display = 'none';
+
+  if (!url) {
+    errEl.textContent = 'Please enter your website URL.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('gradeBtn').disabled = true;
+
+  // Reset loading steps
+  const steps = ['step1','step2','step3','step4','step5'];
+  const initLabels = ['⏳ Checking page speed...','⏳ Testing mobile experience...','⏳ Auditing SEO signals...','⏳ Scanning security headers...','⏳ Evaluating conversion elements...'];
+  steps.forEach((id, i) => {
+    document.getElementById(id).textContent = initLabels[i];
+    document.getElementById(id).className = '';
+  });
+
+  showSection('loading');
+  animateLoadingSteps();
+
+  try {
+    const resp = await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, email })
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(data.error || 'Something went wrong. Please try again.');
+    }
+
+    // Store result URL for sharing
+    if (data.id) {
+      history.replaceState(null, '', '/results?id=' + data.id);
+    }
+
+    renderResults(data);
+  } catch (err) {
+    showSection('landing');
+    document.getElementById('gradeBtn').disabled = false;
+    document.getElementById('errorMsg').textContent = err.message;
+    document.getElementById('errorMsg').style.display = 'block';
+  }
+}
+
+function resetForm() {
+  history.replaceState(null, '', '/');
+  document.getElementById('urlInput').value = '';
+  document.getElementById('emailInput').value = '';
+  document.getElementById('gradeBtn').disabled = false;
+  document.getElementById('highPainCTA').style.display = 'none';
+  document.getElementById('standardCTA').style.display = 'block';
+  showSection('landing');
+  window.scrollTo(0, 0);
+}
+
+// Handle enter key
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('urlInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') startGrading();
+  });
+  document.getElementById('emailInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') startGrading();
+  });
+
+  // Handle direct results URL visit
+  const params = new URLSearchParams(window.location.search);
+  const resultId = params.get('id');
+  if (resultId) {
+    fetch('/api/result/' + resultId)
+      .then(r => r.json())
+      .then(data => { if (data && data.letterGrade) renderResults(data); })
+      .catch(() => showSection('landing'));
+  } else {
+    showSection('landing');
+  }
+});
+</script>
+
 </body>
 </html>
