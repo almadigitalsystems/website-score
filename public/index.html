@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Website Grader &amp; Score | Alma Digital</title>
+  <meta name="description" content="Get a free website score in seconds. Our grader analyzes your site's performance, mobile-friendliness, SEO, security, and conversion readiness on an A-F scale.">
+  <meta name="keywords" content="website grader, website score, website grade, free website grader, site grader, website analyzer">
+  <link rel="canonical" href="https://score.almadigitalservices.com/">
+  <meta property="og:title" content="Free Website Score | Alma Digital">
+  <meta property="og:description" content="Grade your website in seconds. Get actionable insights on performance, SEO, mobile, security, and conversion readiness.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://score.almadigitalservices.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Free Website Score | Alma Digital">
+  <meta name="twitter:description" content="Grade your website in seconds across 5 key dimensions.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Alma Website Score",
+    "url": "https://score.almadigitalservices.com",
+    "description": "Free website grading tool that scores your site on performance, mobile, SEO, security, and conversion readiness.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": {
+      "@type": "Organization",
+      "name": "Alma Digital Services",
+      "url": "https://almadigitalservices.com"
+    }
+  }
+  </script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="/" class="logo">Alma <span>Website Score</span></a>
+    </div>
+  </header>
+
+  <main>
+    <section id="hero" class="section-hero">
+      <div class="container">
+        <h1>How Does Your Website Score?</h1>
+        <p class="subtitle">Get a free, instant analysis of your website across 5 critical dimensions. Find out what's holding your site back — and how to fix it.</p>
+
+        <form id="score-form" class="score-form">
+          <div class="input-row">
+            <input type="text" id="url-input" name="url" placeholder="Enter your website URL (e.g. example.com)" required autocomplete="url">
+            <button type="submit" id="score-btn">Grade My Site</button>
+          </div>
+          <div class="email-row">
+            <input type="email" id="email-input" name="email" placeholder="Your email (optional — for detailed report)">
+          </div>
+        </form>
+
+        <p class="trust-line">Trusted by businesses to identify website issues. 100% free, no signup required.</p>
+      </div>
+    </section>
+
+    <section id="loading" class="section-loading hidden">
+      <div class="container">
+        <div class="loader-wrap">
+          <div class="spinner"></div>
+          <h2>Analyzing your website...</h2>
+          <p id="loading-status">Running performance checks...</p>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="section-results hidden">
+      <div class="container">
+        <div class="results-header">
+          <div class="overall-grade" id="overall-grade">
+            <div class="grade-circle" id="grade-circle">
+              <span class="grade-letter" id="grade-letter">B</span>
+            </div>
+            <div class="grade-meta">
+              <h2>Your Website Score</h2>
+              <p class="score-url" id="score-url"></p>
+              <p class="score-number"><span id="score-number">0</span>/100</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dimensions" id="dimensions"></div>
+
+        <div id="cta-section" class="cta-section">
+          <div id="cta-redesign" class="cta-card cta-redesign hidden">
+            <h3>Your website is holding your business back.</h3>
+            <p>Sites that score D or F lose up to 70% of potential customers. Let our team build you a modern, high-converting website — starting with a free redesign preview.</p>
+            <a href="https://almadigitalservices.com/#contact" class="btn btn-cta">Get a Free Redesign Preview</a>
+          </div>
+          <div id="cta-general" class="cta-card">
+            <h3>Want expert help improving your score?</h3>
+            <p>Our team specializes in building fast, SEO-optimized websites that convert visitors into customers.</p>
+            <a href="https://almadigitalservices.com/#contact" class="btn btn-secondary">Talk to Our Team</a>
+          </div>
+        </div>
+
+        <div class="rescan">
+          <button id="rescan-btn" class="btn btn-outline">Scan Another Website</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="error" class="section-error hidden">
+      <div class="container">
+        <div class="error-card">
+          <h2>Unable to Analyze</h2>
+          <p id="error-message">We couldn't reach that website. Please check the URL and try again.</p>
+          <button id="retry-btn" class="btn btn-outline">Try Again</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-how">
+      <div class="container">
+        <h2>What We Analyze</h2>
+        <div class="how-grid">
+          <div class="how-card">
+            <div class="how-icon">&#9889;</div>
+            <h3>Performance</h3>
+            <p>Page speed, load times, and Core Web Vitals that affect user experience and Google rankings.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-icon">&#128241;</div>
+            <h3>Mobile</h3>
+            <p>Mobile responsiveness, touch targets, and how your site performs on phones and tablets.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-icon">&#128270;</div>
+            <h3>SEO</h3>
+            <p>Meta tags, headings, structured data, and technical SEO signals that help you rank higher.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-icon">&#128274;</div>
+            <h3>Security</h3>
+            <p>HTTPS, security headers, and protections that build trust with visitors and search engines.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-icon">&#128176;</div>
+            <h3>Conversion</h3>
+            <p>CTAs, contact forms, trust signals, and elements that turn visitors into customers.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 <a href="https://almadigitalservices.com">Alma Digital Services</a>. Free website grader tool.</p>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
