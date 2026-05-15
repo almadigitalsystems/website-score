@@ -1,272 +1,336 @@
+const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 const cheerio = require('cheerio');
 
 const PAGESPEED_API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
+const PAGESPEED_KEY = process.env.PAGESPEED_API_KEY || '';
 
-async function scoreWebsite(url) {
-  const [htmlData, psDesktop] = await Promise.all([
-    fetchHtml(url),
-    fetchPageSpeed(url, 'desktop')
-  ]);
-  const psMobile = await fetchPageSpeed(url, 'mobile');
-
-  const performance = scorePerformance(psDesktop);
-  const mobile = scoreMobile(psMobile);
-  const seo = scoreSeo(htmlData);
-  const security = scoreSecurity(htmlData);
-  const conversion = scoreConversion(htmlData);
-
-  const weighted = Math.round(
-    performance.score * 0.25 +
-    mobile.score * 0.20 +
-    seo.score * 0.25 +
-    security.score * 0.15 +
-    conversion.score * 0.15
-  );
-
-  return {
-    url,
-    overall: { score: weighted, grade: grade(weighted) },
-    dimensions: { performance, mobile, seo, security, conversion },
-    analyzedAt: new Date().toISOString()
-  };
-}
-
-async function fetchPageSpeed(url, strategy, attempt = 0) {
-  try {
-    const params = new URLSearchParams({
-      url,
-      strategy,
-      category: 'performance'
-    });
-    if (process.env.GOOGLE_API_KEY) {
-      params.set('key', process.env.GOOGLE_API_KEY);
-    }
-    const res = await fetch(`${PAGESPEED_API}?${params}`);
-    if (res.status === 429 && attempt < 2) {
-      const delay = (attempt + 1) * 3000;
-      await new Promise(r => setTimeout(r, delay));
-      return fetchPageSpeed(url, strategy, attempt + 1);
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error(`PageSpeed ${strategy}:`, err.message);
-    return null;
-  }
+async function fetchPageSpeed(url, strategy) {
+  const params = new URLSearchParams({ url, strategy, category: 'performance' });
+  if (PAGESPEED_KEY) params.set('key', PAGESPEED_KEY);
+  const resp = await fetch(`${PAGESPEED_API}?${params}`, { timeout: 30000 });
+  if (!resp.ok) throw new Error(`PageSpeed API error: ${resp.status}`);
+  return resp.json();
 }
 
 async function fetchHtml(url) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AlmaScoreBot/1.0)' },
-      redirect: 'follow'
-    });
-    clearTimeout(timeout);
-    const html = await res.text();
-    const headers = {};
-    res.headers.forEach((v, k) => { headers[k.toLowerCase()] = v; });
-    return {
-      $: cheerio.load(html),
-      html,
-      headers,
-      isHttps: res.url.startsWith('https://')
-    };
-  } catch (err) {
-    console.error('HTML fetch:', err.message);
-    return null;
-  }
-}
-
-function scorePerformance(ps) {
-  const findings = [];
-  let score = 50;
-
-  if (ps?.lighthouseResult) {
-    const lhr = ps.lighthouseResult;
-    score = Math.round((lhr.categories?.performance?.score ?? 0.5) * 100);
-    const a = lhr.audits || {};
-
-    for (const [key, label] of [
-      ['first-contentful-paint', 'First Contentful Paint'],
-      ['largest-contentful-paint', 'Largest Contentful Paint'],
-      ['total-blocking-time', 'Total Blocking Time'],
-      ['cumulative-layout-shift', 'Cumulative Layout Shift'],
-      ['speed-index', 'Speed Index']
-    ]) {
-      if (a[key]) {
-        findings.push({ label, value: a[key].displayValue || '', pass: a[key].score >= 0.9 });
-      }
+  const resp = await fetch(url, {
+    timeout: 15000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; AlmaWebsiteScorer/1.0; +https://almadigitalservices.com)'
     }
-  } else {
-    findings.push({ label: 'PageSpeed data', value: 'Unavailable', pass: false });
-  }
-
-  return { score, grade: grade(score), findings, label: 'Performance' };
+  });
+  const html = await resp.text();
+  const finalUrl = resp.url;
+  const headers = Object.fromEntries(resp.headers.entries());
+  return { html, finalUrl, headers, status: resp.status };
 }
 
-function scoreMobile(ps) {
+function scorePerformance(psiData) {
+  const cats = psiData?.lighthouseResult?.categories;
+  const perf = cats?.performance?.score;
+  if (perf == null) return { score: 50, findings: ['Could not retrieve performance data'] };
+
+  const score = Math.round(perf * 100);
+  const audits = psiData?.lighthouseResult?.audits || {};
   const findings = [];
-  let score = 50;
 
-  if (ps?.lighthouseResult) {
-    const lhr = ps.lighthouseResult;
-    score = Math.round((lhr.categories?.performance?.score ?? 0.5) * 100);
-    const a = lhr.audits || {};
+  const fcp = audits['first-contentful-paint']?.displayValue;
+  const lcp = audits['largest-contentful-paint']?.displayValue;
+  const tbt = audits['total-blocking-time']?.displayValue;
+  const cls = audits['cumulative-layout-shift']?.displayValue;
 
-    if (a.viewport) findings.push({ label: 'Viewport Meta', value: a.viewport.score >= 0.5 ? 'Present' : 'Missing', pass: a.viewport.score >= 0.5 });
-    if (a['first-contentful-paint']) findings.push({ label: 'Mobile FCP', value: a['first-contentful-paint'].displayValue || '', pass: a['first-contentful-paint'].score >= 0.9 });
-    if (a.interactive) findings.push({ label: 'Time to Interactive', value: a.interactive.displayValue || '', pass: a.interactive.score >= 0.9 });
-  } else {
-    findings.push({ label: 'Mobile data', value: 'Unavailable', pass: false });
-  }
+  if (fcp) findings.push(`First Contentful Paint: ${fcp}`);
+  if (lcp) findings.push(`Largest Contentful Paint: ${lcp}`);
+  if (tbt) findings.push(`Total Blocking Time: ${tbt}`);
+  if (cls) findings.push(`Layout Shift: ${cls}`);
 
-  return { score, grade: grade(score), findings, label: 'Mobile' };
+  if (score < 50) findings.push('Page loads very slowly — visitors are likely leaving before it finishes');
+  else if (score < 70) findings.push('Page speed needs improvement');
+  else if (score >= 90) findings.push('Excellent performance');
+
+  return { score, findings };
 }
 
-function scoreSeo(htmlData) {
+function scoreMobile(psiMobileData) {
+  const cats = psiMobileData?.lighthouseResult?.categories;
+  const perf = cats?.performance?.score;
+  if (perf == null) return { score: 50, findings: ['Could not retrieve mobile data'] };
+
+  const score = Math.round(perf * 100);
+  const audits = psiMobileData?.lighthouseResult?.audits || {};
   const findings = [];
-  let pts = 0;
 
-  if (!htmlData?.$) {
-    return { score: 0, grade: 'F', findings: [{ label: 'HTML', value: 'Unavailable', pass: false }], label: 'SEO' };
-  }
+  const viewport = audits['viewport']?.score;
+  const tapTargets = audits['tap-targets']?.score;
 
-  const $ = htmlData.$;
+  if (viewport === 0) findings.push('Missing viewport meta tag — site not optimized for mobile');
+  if (tapTargets === 0) findings.push('Tap targets too small for mobile users');
+  if (score < 50) findings.push('Poor mobile experience — most visitors browse on phone');
+  else if (score >= 90) findings.push('Excellent mobile experience');
 
+  return { score, findings };
+}
+
+function scoreSEO($, finalUrl) {
+  const findings = [];
+  let score = 0;
+
+  // Title tag (15 pts)
   const title = $('title').text().trim();
   if (title) {
-    const ok = title.length >= 10 && title.length <= 70;
-    pts += ok ? 15 : 8;
-    findings.push({ label: 'Title Tag', value: `${title.length} chars${ok ? '' : title.length > 70 ? ' (too long)' : ' (too short)'}`, pass: ok });
+    score += 15;
+    if (title.length > 60) findings.push(`Title tag is too long (${title.length} chars, aim for <60)`);
   } else {
-    findings.push({ label: 'Title Tag', value: 'Missing', pass: false });
+    findings.push('Missing title tag — critical for search rankings');
   }
 
-  const desc = $('meta[name="description"]').attr('content')?.trim();
-  if (desc) {
-    const ok = desc.length >= 50 && desc.length <= 160;
-    pts += ok ? 15 : 8;
-    findings.push({ label: 'Meta Description', value: `${desc.length} chars${ok ? '' : desc.length > 160 ? ' (too long)' : ' (too short)'}`, pass: ok });
+  // Meta description (12 pts)
+  const metaDesc = $('meta[name="description"]').attr('content');
+  if (metaDesc) {
+    score += 12;
+    if (metaDesc.length > 160) findings.push('Meta description is too long (aim for <160 chars)');
   } else {
-    findings.push({ label: 'Meta Description', value: 'Missing', pass: false });
+    findings.push('Missing meta description — affects click-through rates from search');
   }
 
-  const h1s = $('h1').length;
-  if (h1s === 1) { pts += 12; findings.push({ label: 'H1 Tag', value: '1 found', pass: true }); }
-  else if (h1s > 1) { pts += 6; findings.push({ label: 'H1 Tag', value: `${h1s} found (should be 1)`, pass: false }); }
-  else { findings.push({ label: 'H1 Tag', value: 'Missing', pass: false }); }
-
-  if ($('h2').length > 0) { pts += 8; findings.push({ label: 'Heading Structure', value: 'H2 tags present', pass: true }); }
-  else { findings.push({ label: 'Heading Structure', value: 'No H2 tags', pass: false }); }
-
-  const imgs = $('img').length;
-  const alts = $('img[alt]').filter((_, el) => $(el).attr('alt').trim().length > 0).length;
-  if (imgs === 0) { pts += 12; findings.push({ label: 'Image Alt Text', value: 'No images', pass: true }); }
-  else {
-    const r = alts / imgs;
-    pts += Math.round(r * 12);
-    findings.push({ label: 'Image Alt Text', value: `${alts}/${imgs} have alt text`, pass: r >= 0.8 });
+  // H1 (10 pts)
+  const h1s = $('h1');
+  if (h1s.length === 1) {
+    score += 10;
+  } else if (h1s.length === 0) {
+    findings.push('Missing H1 heading');
+  } else {
+    score += 5;
+    findings.push(`Multiple H1 tags found (${h1s.length}) — use only one`);
   }
 
-  if ($('link[rel="canonical"]').attr('href')) { pts += 8; findings.push({ label: 'Canonical URL', value: 'Present', pass: true }); }
-  else { findings.push({ label: 'Canonical URL', value: 'Missing', pass: false }); }
+  // Alt text on images (10 pts)
+  const imgs = $('img');
+  const imgsWithoutAlt = imgs.filter((_, el) => !$(el).attr('alt'));
+  if (imgs.length === 0 || imgsWithoutAlt.length === 0) {
+    score += 10;
+  } else {
+    const ratio = (imgs.length - imgsWithoutAlt.length) / imgs.length;
+    score += Math.round(ratio * 10);
+    findings.push(`${imgsWithoutAlt.length} of ${imgs.length} images missing alt text`);
+  }
 
-  const og = [$('meta[property="og:title"]').attr('content'), $('meta[property="og:description"]').attr('content'), $('meta[property="og:image"]').attr('content')].filter(Boolean).length;
-  pts += Math.round((og / 3) * 10);
-  findings.push({ label: 'Open Graph', value: `${og}/3 tags`, pass: og >= 2 });
+  // Canonical (8 pts)
+  if ($('link[rel="canonical"]').length > 0) {
+    score += 8;
+  } else {
+    findings.push('No canonical URL tag — may cause duplicate content issues');
+  }
 
-  if ($('script[type="application/ld+json"]').length) { pts += 10; findings.push({ label: 'Structured Data', value: 'JSON-LD found', pass: true }); }
-  else { findings.push({ label: 'Structured Data', value: 'None', pass: false }); }
+  // Open Graph (10 pts)
+  const ogTitle = $('meta[property="og:title"]').attr('content');
+  const ogDesc = $('meta[property="og:description"]').attr('content');
+  if (ogTitle && ogDesc) {
+    score += 10;
+  } else {
+    findings.push('Missing Open Graph tags — affects social media sharing appearance');
+  }
 
-  const noindex = ($('meta[name="robots"]').attr('content') || '').includes('noindex');
-  if (!noindex) { pts += 5; findings.push({ label: 'Indexability', value: 'Indexable', pass: true }); }
-  else { findings.push({ label: 'Indexability', value: 'Blocked (noindex)', pass: false }); }
+  // Structured data (10 pts)
+  const jsonLd = $('script[type="application/ld+json"]');
+  if (jsonLd.length > 0) {
+    score += 10;
+  } else {
+    findings.push('No structured data (JSON-LD) — missing rich snippet opportunities');
+  }
 
-  if ($('html').attr('lang')) { pts += 5; findings.push({ label: 'Language', value: $('html').attr('lang'), pass: true }); }
-  else { findings.push({ label: 'Language', value: 'Missing', pass: false }); }
+  // HTTPS check (15 pts)
+  if (finalUrl.startsWith('https://')) {
+    score += 15;
+  } else {
+    findings.push('Site not using HTTPS — hurts search rankings and trust');
+  }
 
-  return { score: Math.min(pts, 100), grade: grade(Math.min(pts, 100)), findings, label: 'SEO' };
+  // Robots meta (5 pts)
+  const robotsMeta = $('meta[name="robots"]').attr('content');
+  if (!robotsMeta || (!robotsMeta.includes('noindex') && !robotsMeta.includes('nofollow'))) {
+    score += 5;
+  } else {
+    findings.push('Robots meta is blocking search engines from indexing pages');
+  }
+
+  // Sitemap link (5 pts)
+  const sitemapLink = $('link[rel="sitemap"]').length;
+  if (sitemapLink > 0) {
+    score += 5;
+  }
+
+  if (findings.length === 0) findings.push('SEO fundamentals are solid');
+
+  return { score: Math.min(100, score), findings };
 }
 
-function scoreSecurity(htmlData) {
+function scoreSecurity(headers, finalUrl) {
   const findings = [];
-  let pts = 0;
+  let score = 0;
 
-  if (!htmlData) {
-    return { score: 0, grade: 'F', findings: [{ label: 'Security', value: 'Unavailable', pass: false }], label: 'Security' };
+  // HTTPS (30 pts)
+  if (finalUrl.startsWith('https://')) {
+    score += 30;
+  } else {
+    findings.push('Not using HTTPS — data transmitted insecurely');
   }
 
-  if (htmlData.isHttps) { pts += 35; findings.push({ label: 'HTTPS', value: 'Enabled', pass: true }); }
-  else { findings.push({ label: 'HTTPS', value: 'Not enabled', pass: false }); }
+  // HSTS (20 pts)
+  if (headers['strict-transport-security']) {
+    score += 20;
+  } else {
+    findings.push('Missing HSTS header — browsers may fall back to HTTP');
+  }
 
-  const h = htmlData.headers;
+  // X-Content-Type-Options (15 pts)
+  if (headers['x-content-type-options']) {
+    score += 15;
+  } else {
+    findings.push('Missing X-Content-Type-Options header');
+  }
 
-  if (h['strict-transport-security']) { pts += 20; findings.push({ label: 'HSTS', value: 'Present', pass: true }); }
-  else { findings.push({ label: 'HSTS', value: 'Missing', pass: false }); }
+  // X-Frame-Options (15 pts)
+  if (headers['x-frame-options']) {
+    score += 15;
+  } else {
+    findings.push('Missing X-Frame-Options header — vulnerable to clickjacking');
+  }
 
-  if (h['x-content-type-options']?.includes('nosniff')) { pts += 10; findings.push({ label: 'X-Content-Type-Options', value: 'nosniff', pass: true }); }
-  else { findings.push({ label: 'X-Content-Type-Options', value: 'Missing', pass: false }); }
+  // Content-Security-Policy (10 pts)
+  if (headers['content-security-policy']) {
+    score += 10;
+  }
 
-  if (h['x-frame-options']) { pts += 10; findings.push({ label: 'X-Frame-Options', value: h['x-frame-options'], pass: true }); }
-  else { findings.push({ label: 'X-Frame-Options', value: 'Missing', pass: false }); }
+  // Referrer-Policy (10 pts)
+  if (headers['referrer-policy']) {
+    score += 10;
+  }
 
-  if (h['content-security-policy']) { pts += 15; findings.push({ label: 'Content-Security-Policy', value: 'Present', pass: true }); }
-  else { findings.push({ label: 'Content-Security-Policy', value: 'Missing', pass: false }); }
+  if (findings.length === 0) findings.push('Strong security headers in place');
 
-  if (h['referrer-policy']) { pts += 10; findings.push({ label: 'Referrer-Policy', value: h['referrer-policy'], pass: true }); }
-  else { findings.push({ label: 'Referrer-Policy', value: 'Missing', pass: false }); }
-
-  return { score: Math.min(pts, 100), grade: grade(Math.min(pts, 100)), findings, label: 'Security' };
+  return { score: Math.min(100, score), findings };
 }
 
-function scoreConversion(htmlData) {
+function scoreConversion($) {
   const findings = [];
-  let pts = 0;
+  let score = 0;
+  const html = $.html().toLowerCase();
 
-  if (!htmlData?.$) {
-    return { score: 0, grade: 'F', findings: [{ label: 'Conversion', value: 'Unavailable', pass: false }], label: 'Conversion' };
+  // CTA buttons (20 pts)
+  const ctaKeywords = ['get started', 'contact us', 'free', 'schedule', 'book', 'call', 'quote', 'learn more', 'sign up'];
+  const hasCTA = ctaKeywords.some(kw => html.includes(kw));
+  if (hasCTA) {
+    score += 20;
+  } else {
+    findings.push('No clear call-to-action found — visitors may not know what to do next');
   }
 
-  const $ = htmlData.$;
-  const text = htmlData.html.toLowerCase();
+  // Contact form (20 pts)
+  const hasForm = $('form').length > 0;
+  if (hasForm) {
+    score += 20;
+  } else {
+    findings.push('No contact form detected — harder for leads to reach you');
+  }
 
-  const btns = $('button, a.btn, a.button, [class*="cta"], [class*="btn"]');
-  if (btns.length > 0) { pts += 20; findings.push({ label: 'CTA Buttons', value: `${btns.length} found`, pass: true }); }
-  else { findings.push({ label: 'CTA Buttons', value: 'None found', pass: false }); }
+  // Phone number (15 pts)
+  const phoneRegex = /(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
+  if (phoneRegex.test(html)) {
+    score += 15;
+  } else {
+    findings.push('No phone number visible — reduces trust and accessibility');
+  }
 
-  if ($('form').length > 0) { pts += 20; findings.push({ label: 'Contact Form', value: 'Present', pass: true }); }
-  else { findings.push({ label: 'Contact Form', value: 'None', pass: false }); }
+  // Email address (10 pts)
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+  const emailOrMailto = emailRegex.test(html) || html.includes('mailto:');
+  if (emailOrMailto) {
+    score += 10;
+  }
 
-  const hasPhone = /(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(text) || $('a[href^="tel:"]').length > 0;
-  if (hasPhone) { pts += 15; findings.push({ label: 'Phone Number', value: 'Visible', pass: true }); }
-  else { findings.push({ label: 'Phone Number', value: 'Not found', pass: false }); }
+  // Social media links (10 pts)
+  const socialLinks = ['facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'linkedin.com'];
+  const hasSocial = socialLinks.some(s => html.includes(s));
+  if (hasSocial) {
+    score += 10;
+  } else {
+    findings.push('No social media links — missed trust-building opportunity');
+  }
 
-  const hasEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/.test(text) || $('a[href^="mailto:"]').length > 0;
-  if (hasEmail) { pts += 10; findings.push({ label: 'Email', value: 'Visible', pass: true }); }
-  else { findings.push({ label: 'Email', value: 'Not found', pass: false }); }
+  // Navigation (15 pts)
+  const hasNav = $('nav').length > 0 || $('header ul').length > 0;
+  if (hasNav) {
+    score += 15;
+  } else {
+    findings.push('Navigation structure unclear — visitors may struggle to find information');
+  }
 
-  const socialLinks = $('a').filter((_, el) => /facebook\.com|twitter\.com|x\.com|linkedin\.com|instagram\.com|youtube\.com/i.test($(el).attr('href') || ''));
-  if (socialLinks.length > 0) { pts += 10; findings.push({ label: 'Social Links', value: `${socialLinks.length} found`, pass: true }); }
-  else { findings.push({ label: 'Social Links', value: 'None', pass: false }); }
+  // Above-fold CTA check (10 pts) — heuristic: CTA keyword in first 2000 chars
+  const firstSection = html.slice(0, 2000);
+  if (ctaKeywords.some(kw => firstSection.includes(kw))) {
+    score += 10;
+  } else {
+    findings.push('No call-to-action visible above the fold');
+  }
 
-  if ($('nav, [role="navigation"]').length > 0) { pts += 15; findings.push({ label: 'Navigation', value: 'Present', pass: true }); }
-  else { findings.push({ label: 'Navigation', value: 'Missing', pass: false }); }
+  if (findings.length === 0) findings.push('Good conversion elements in place');
 
-  if (/testimonial|review|rating|certified|award|guarantee/i.test(text)) { pts += 10; findings.push({ label: 'Trust Signals', value: 'Found', pass: true }); }
-  else { findings.push({ label: 'Trust Signals', value: 'None detected', pass: false }); }
-
-  return { score: Math.min(pts, 100), grade: grade(Math.min(pts, 100)), findings, label: 'Conversion' };
+  return { score: Math.min(100, score), findings };
 }
 
-function grade(score) {
+function calculateOverall(dimensions) {
+  const weights = { performance: 0.25, mobile: 0.20, seo: 0.25, security: 0.15, conversion: 0.15 };
+  let total = 0;
+  for (const [key, weight] of Object.entries(weights)) {
+    total += (dimensions[key]?.score || 0) * weight;
+  }
+  return Math.round(total);
+}
+
+function getLetterGrade(score) {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
   if (score >= 70) return 'C';
   if (score >= 60) return 'D';
   return 'F';
+}
+
+async function scoreWebsite(url) {
+  // Run all checks in parallel for speed
+  const [psiDesktop, psiMobile, htmlResult] = await Promise.allSettled([
+    fetchPageSpeed(url, 'desktop'),
+    fetchPageSpeed(url, 'mobile'),
+    fetchHtml(url)
+  ]);
+
+  const html = htmlResult.status === 'fulfilled' ? htmlResult.value.html : '';
+  const finalUrl = htmlResult.status === 'fulfilled' ? htmlResult.value.finalUrl : url;
+  const headers = htmlResult.status === 'fulfilled' ? htmlResult.value.headers : {};
+
+  const $ = cheerio.load(html);
+
+  const psiDesktopData = psiDesktop.status === 'fulfilled' ? psiDesktop.value : null;
+  const psiMobileData = psiMobile.status === 'fulfilled' ? psiMobile.value : null;
+
+  const dimensions = {
+    performance: scorePerformance(psiDesktopData),
+    mobile: scoreMobile(psiMobileData),
+    seo: scoreSEO($, finalUrl),
+    security: scoreSecurity(headers, finalUrl),
+    conversion: scoreConversion($)
+  };
+
+  const overallScore = calculateOverall(dimensions);
+  const letterGrade = getLetterGrade(overallScore);
+
+  return {
+    overallScore,
+    letterGrade,
+    dimensions,
+    isHighPain: letterGrade === 'F' || letterGrade === 'D',
+    scoredAt: new Date().toISOString()
+  };
 }
 
 module.exports = { scoreWebsite };
