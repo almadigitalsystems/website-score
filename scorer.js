@@ -3,11 +3,11 @@ const cheerio = require('cheerio');
 const PAGESPEED_API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
 
 async function scoreWebsite(url) {
-  const [psDesktop, psMobile, htmlData] = await Promise.all([
-    fetchPageSpeed(url, 'desktop'),
-    fetchPageSpeed(url, 'mobile'),
-    fetchHtml(url)
+  const [htmlData, psDesktop] = await Promise.all([
+    fetchHtml(url),
+    fetchPageSpeed(url, 'desktop')
   ]);
+  const psMobile = await fetchPageSpeed(url, 'mobile');
 
   const performance = scorePerformance(psDesktop);
   const mobile = scoreMobile(psMobile);
@@ -31,14 +31,22 @@ async function scoreWebsite(url) {
   };
 }
 
-async function fetchPageSpeed(url, strategy) {
+async function fetchPageSpeed(url, strategy, attempt = 0) {
   try {
     const params = new URLSearchParams({
       url,
       strategy,
       category: 'performance'
     });
+    if (process.env.GOOGLE_API_KEY) {
+      params.set('key', process.env.GOOGLE_API_KEY);
+    }
     const res = await fetch(`${PAGESPEED_API}?${params}`);
+    if (res.status === 429 && attempt < 2) {
+      const delay = (attempt + 1) * 3000;
+      await new Promise(r => setTimeout(r, delay));
+      return fetchPageSpeed(url, strategy, attempt + 1);
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
