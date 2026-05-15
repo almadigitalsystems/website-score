@@ -1,4 +1,4 @@
-const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+// Use native fetch (Node 18+) — avoid node-fetch v3 undici/File issues
 const cheerio = require('cheerio');
 
 const PAGESPEED_API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
@@ -7,14 +7,14 @@ const PAGESPEED_KEY = process.env.PAGESPEED_API_KEY || '';
 async function fetchPageSpeed(url, strategy) {
   const params = new URLSearchParams({ url, strategy, category: 'performance' });
   if (PAGESPEED_KEY) params.set('key', PAGESPEED_KEY);
-  const resp = await fetch(`${PAGESPEED_API}?${params}`, { timeout: 30000 });
+  const resp = await fetch(`${PAGESPEED_API}?${params}`, { signal: AbortSignal.timeout(30000) });
   if (!resp.ok) throw new Error(`PageSpeed API error: ${resp.status}`);
   return resp.json();
 }
 
 async function fetchHtml(url) {
   const resp = await fetch(url, {
-    timeout: 15000,
+    signal: AbortSignal.timeout(15000),
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; AlmaWebsiteScorer/1.0; +https://almadigitalservices.com)'
     }
